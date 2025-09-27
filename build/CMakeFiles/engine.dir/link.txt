@@ -1,0 +1,1 @@
+/usr/bin/c++ -g -flto=auto -fno-fat-lto-objects -Wl,--dependency-file=CMakeFiles/engine.dir/link.d CMakeFiles/engine.dir/src/main.cpp.o -o engine

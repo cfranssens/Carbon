@@ -1,0 +1,8 @@
+[
+{
+  "directory": "/home/c/Git/Carbon/build",
+  "command": "/usr/bin/c++  -I/home/c/Git/Carbon/include -g -std=gnu++20 -flto=auto -fno-fat-lto-objects -O3 -march=native -ffast-math -funroll-loops -o CMakeFiles/engine.dir/src/main.cpp.o -c /home/c/Git/Carbon/src/main.cpp",
+  "file": "/home/c/Git/Carbon/src/main.cpp",
+  "output": "CMakeFiles/engine.dir/src/main.cpp.o"
+}
+]

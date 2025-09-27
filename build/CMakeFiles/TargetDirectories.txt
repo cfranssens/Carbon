@@ -1,3 +1,0 @@
-/home/c/Git/Carbon/build/CMakeFiles/engine.dir
-/home/c/Git/Carbon/build/CMakeFiles/edit_cache.dir
-/home/c/Git/Carbon/build/CMakeFiles/rebuild_cache.dir

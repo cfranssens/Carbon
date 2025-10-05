@@ -3,29 +3,29 @@
 #include "ecs/archetype.hpp"
 #include "ecs/command_buffer.hpp"
 #include "ecs/component.hpp"
+#include "ecs/core.hpp"
 #include "log.hpp"
+#include <bitset>
 #include <cstddef>
 #include <cstdint>
+#include <memory>
 #include <string>
 
 #include <flat_hash_map.hpp>
+#include <type_traits>
 #include <utility>
-
-using Recipe = size_t;
+#include <vector>
 
 // Base class to inherit from.
 class System {
 public:
-  template <typename... Components> void test() {
-    // LOG_DEBUG(std::to_string(fastComponentHash<Components...>()));
-
-    createEntity(1.0f, 1ULL);
-  };
+  // Actual system job
+  virtual void update() = 0;
 
 protected:
   // Create an entity
   template <typename... Components>
-  size_t createEntity(Components &&...components) {
+  EntityID createEntity(Components &&...components) {
     uint64_t hash = fastComponentHash<Components...>();
 
     if (m_recipes.find(hash) == m_recipes.end()) {
@@ -34,9 +34,27 @@ protected:
       Archetype archetype = Archetype::fromComponents<Components...>();
       // Define buffer layout up front
       m_recipes[hash] = {archetype};
+
+      m_writeMask.merge(archetype.mask());
+
+      LOG_DEBUG("Total mask: " +
+                std::bitset<64>(m_writeMask.m_scalarMask[0]).to_string());
     }
 
-    return m_recipes[hash].insert(std::move(components)...);
+    EntityID id;
+    id.m_bufferIndex = m_recipes[hash].insert(std::move(components)...);
+    return id;
+  }
+
+  // DEBUG
+  void flushAllStorageBuffers(Core *core) {
+    for (auto &[key, buffer] : m_recipes) {
+      Archetype arch = buffer.archetype();
+      core->insertStorageBuffer(std::move(buffer));
+
+      // Reconmstruct what? There's nothing left.
+      buffer = StorageBuffer(arch);
+    };
   }
 
 private:
@@ -51,5 +69,47 @@ private:
   }
 
   // Store recipes for constructor calls.
-  ska::flat_hash_map<uint64_t, SpawnCommandBuffer> m_recipes;
+  ska::flat_hash_map<uint64_t, StorageBuffer> m_recipes;
+
+  // Mask of all components accessed by the system to resolve confilcts,
+  ArchetypeMask m_readMask;
+  ArchetypeMask m_writeMask;
+};
+
+union SystemID {
+  uint64_t packed;
+  struct {
+    uint32_t layer, id;
+  };
+};
+
+struct Layer {
+  std::vector<SystemID> m_systems;
+};
+
+// Collects all systems and manages workers
+class SystemScheduler {
+public:
+  SystemScheduler() = default;
+
+  template <typename T> void registerSystem() {
+    static_assert(std::is_base_of_v<System, T>, "T must derive from System.");
+    SystemID id;
+    id.id = m_systems.size();
+
+    // What the helly.
+    m_systems.emplace(id.packed,
+                      std::unique_ptr<System>(std::make_unique<T>().release()));
+  }
+
+  // Quick debug call to update all systems
+  void update() {
+    for (auto &[id, system] : m_systems) {
+      system->update();
+    }
+  }
+
+private:
+  ska::flat_hash_map<uint64_t, std::unique_ptr<System>> m_systems;
+  std::vector<Layer> m_layers;
 };

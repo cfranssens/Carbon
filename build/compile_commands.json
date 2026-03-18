@@ -1,8 +1,0 @@
-[
-{
-  "directory": "/home/c/Git/Carbon/build",
-  "command": "/usr/bin/c++  -I/home/c/Git/Carbon/include -I/home/c/Git/Carbon/third_party -isystem /usr/include/SDL2 -g -std=gnu++20 -flto=auto -fno-fat-lto-objects -O3 -D_GNU_SOURCE -march=haswell -mtune=haswell -mavx2 -mfma -funroll-loops -ffast-math --param=max-inline-insns-single=200 --param=max-inline-insns-auto=100 -g -save-temps=obj -fverbose-asm -Wa,-gdwarf-2 -o CMakeFiles/carbon.dir/src/main.cpp.o -c /home/c/Git/Carbon/src/main.cpp",
-  "file": "/home/c/Git/Carbon/src/main.cpp",
-  "output": "CMakeFiles/carbon.dir/src/main.cpp.o"
-}
-]

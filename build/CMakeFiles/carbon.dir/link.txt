@@ -1,1 +1,0 @@
-/usr/bin/c++ -g -flto=auto -fno-fat-lto-objects -Wl,--dependency-file=CMakeFiles/carbon.dir/link.d CMakeFiles/carbon.dir/src/main.cpp.o -o carbon  /usr/lib/libSDL2-2.0.so.0.3200.64 -lxxhash -lhwloc

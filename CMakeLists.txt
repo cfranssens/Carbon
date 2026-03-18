@@ -30,7 +30,7 @@ if (MSVC)
     add_compile_options(-O3 -D_GNU_SOURCE -march=haswell -mtune=haswell -mavx2 -mfma -funroll-loops -ffast-math)
 endif()
 
-# SIMPLE VERSION - just add to your existing compile options
+
 add_compile_options(
     -O3
     -D_GNU_SOURCE
@@ -60,13 +60,12 @@ find_package(SDL2 REQUIRED)
 pkg_check_modules(XXHASH REQUIRED libxxhash)
 pkg_check_modules(HWLOC REQUIRED hwloc)
 
-# ====== 1. MAIN TARGET ======
+
 add_executable(carbon ${ENGINE_SOURCES})
 target_include_directories(carbon PRIVATE ${XXHASH_INCLUDE_DIRS} ${SDL_INCLUDE_DIRS} ${HWLOC_INCLUDE_DIRS})
 target_link_libraries(carbon SDL2::SDL2 ${XXHASH_LIBRARIES} ${HWLOC_LIBRARIES})
 
 
-# ====== 3. LTO FOR ALL TARGETS ======
 include(CheckIPOSupported)
 check_ipo_supported(RESULT result)
 if(result)

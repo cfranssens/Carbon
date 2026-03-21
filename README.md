@@ -36,6 +36,7 @@ As a result, cross-thread structural changes are always delayed by at least one 
 
 ## Non-Structural Changes
 Writes performed inside Jobs are deferred until the end-of-frame sync point via write buffers for non-const queried components.
-An important semantic here is that if a Job runs on the same thread that owns the PageBlock, those writes can be applied immediately instead of being deferred. This should still remain a hint to the scheduler: prefer the owning thread when possible, but fall back to another thread if the local queue is full.
+An important semantic here is that if access is limited across the frame (only ever one Job writes to the PageBlock a d it is not read afterwards), those writes can be applied immediately instead of being deferred.
+
 Even when data writes are immediate, state updates are still deferred until the next sync point to avoid inconsistencies. This avoids traditional ECS synchronization issues and allows for more flexible execution. The goal is to structure workloads so threads are never idle.
 Systems are loosely ordered by definition order unless explicitly overridden with a priority.

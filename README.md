@@ -40,3 +40,6 @@ An important semantic here is that if access is limited across the frame (only e
 
 Even when data writes are immediate, state updates are still deferred until the next sync point to avoid inconsistencies. This avoids traditional ECS synchronization issues and allows for more flexible execution. The goal is to structure workloads so threads are never idle.
 Systems are loosely ordered by definition order unless explicitly overridden with a priority.
+
+The information in this README is prone to change and is not guaranteed to match the current implementation entirely. 
+Working on including benchmarks. 

@@ -1,0 +1,4 @@
+var searchData=
+[
+  ['format_0',['format',['../structstd_1_1formatter_3_01world_1_1Signature_00_01char_01_4.html#a410d671847ce2c8d93ba845bd46363dc',1,'std::formatter&lt; world::Signature, char &gt;::format()'],['../structstd_1_1formatter_3_01world_1_1meta_1_1type__id__t_00_01char_01_4.html#a83a61d5a73ffb8bde3558a3eeb214fbf',1,'std::formatter&lt; world::meta::type_id_t, char &gt;::format()'],['../structstd_1_1formatter_3_01std_1_1array_3_01world_1_1meta_1_1type__id__t_00_01N_01_4_00_01char_01_4.html#a63161b23ee4f72190778d3fc028a208b',1,'std::formatter&lt; std::array&lt; world::meta::type_id_t, N &gt;, char &gt;::format()'],['../structstd_1_1formatter_3_01std_1_1span_3_01const_01world_1_1meta_1_1type__id__t_01_4_00_01char_01_4.html#aab2f554a5c9c8a92fe61070903765e4d',1,'std::formatter&lt; std::span&lt; const world::meta::type_id_t &gt;, char &gt;::format()']]]
+];

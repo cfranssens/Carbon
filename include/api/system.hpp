@@ -3,7 +3,7 @@
 #include "world/allocator.hpp"
 #include "world/entity.hpp"
 #include <cstddef>
-#include <iostream>
+
 #include <memory>
 
 namespace api {

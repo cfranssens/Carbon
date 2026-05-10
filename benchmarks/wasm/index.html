@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Carbon WASM Benchmark</title>
+
+    <style>
+        body {
+            font-family: sans-serif;
+            padding: 40px;
+            background: #111;
+            color: #eee;
+        }
+
+        h1 {
+            margin-bottom: 8px;
+        }
+
+        .info {
+            color: #aaa;
+            margin-bottom: 20px;
+        }
+
+        #result {
+            font-size: 32px;
+            font-weight: bold;
+        }
+
+        button {
+            padding: 12px 24px;
+            font-size: 16px;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Carbon ECS WASM Benchmark</h1>
+
+    <div class="info" id="cpu"></div>
+
+    <div id="result">waiting...</div>
+
+    <button id="run">Run Benchmark</button>
+
+    <script type="module">
+
+        import createModule from "./benchmark.js";
+
+        const cpuLabel = document.getElementById("cpu");
+        const resultLabel = document.getElementById("result");
+        const runButton = document.getElementById("run");
+
+        const module = await createModule();
+
+        function getCPUInfo() {
+
+            const ua = navigator.userAgent;
+
+            if (ua.includes("ARM") || ua.includes("aarch64")) {
+                return "ARM";
+            }
+
+            if (ua.includes("x86_64") || ua.includes("Win64")) {
+                return "x86_64";
+            }
+
+            return navigator.platform;
+        }
+
+        cpuLabel.textContent =
+            `CPU Architecture: ${getCPUInfo()}`;
+
+        async function runBenchmark() {
+
+            resultLabel.textContent = "running...";
+
+            await new Promise(r => setTimeout(r, 50));
+
+            const ms = module.ccall(
+                "benchmark_64",
+                "number",
+                [],
+                []
+            );
+
+            resultLabel.textContent =
+                `${ms.toFixed(2)} ms`;
+        }
+
+        runButton.onclick = runBenchmark;
+
+    </script>
+
+</body>
+</html>

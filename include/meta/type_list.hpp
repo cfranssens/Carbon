@@ -5,8 +5,9 @@
 #include <array>
 #include <cstddef>
 
-#include <ostream>
 #include <tuple>
+#include <span>
+#include <format>
 
 namespace world::meta {
     // very meta

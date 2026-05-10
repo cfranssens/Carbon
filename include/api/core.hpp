@@ -1,7 +1,7 @@
 #pragma once
 
 #include "api/system.hpp"
-#include "build.hpp"
+
 #include "world/allocator.hpp"
 #include <memory>
 #include <type_traits>

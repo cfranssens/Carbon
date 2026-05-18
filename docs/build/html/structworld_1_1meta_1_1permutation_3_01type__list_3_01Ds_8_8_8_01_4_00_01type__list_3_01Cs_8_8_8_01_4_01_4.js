@@ -1,4 +1,0 @@
-var structworld_1_1meta_1_1permutation_3_01type__list_3_01Ds_8_8_8_01_4_00_01type__list_3_01Cs_8_8_8_01_4_01_4 =
-[
-    [ "value", "structworld_1_1meta_1_1permutation_3_01type__list_3_01Ds_8_8_8_01_4_00_01type__list_3_01Cs_8_8_8_01_4_01_4.html#aef9359ade75186a8ddc1a560c4524386", null ]
-];

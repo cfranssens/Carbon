@@ -13,9 +13,9 @@
 
 namespace world {
   // Separated per cacheline, chunked arena bump allocator.  
-  constexpr size_t CHUNK_SIZE = 16;
-  constexpr size_t LOG2_CHUNK_SIZE = 4;
-  constexpr size_t THREAD_COUNT = 1;
+  constexpr size_t CHUNK_SIZE = 64;
+  constexpr size_t LOG2_CHUNK_SIZE = 6;
+  constexpr size_t THREAD_COUNT = 16;
 
   inline size_t alignup(size_t x, size_t align) {
     return (x + align - 1) & ~(align - 1);

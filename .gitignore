@@ -1,3 +1,4 @@
 build/
 third_party/
-third_party
+docs/node_modules/
+docs/dist/

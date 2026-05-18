@@ -1,13 +1,7 @@
 {
-	"compatibility_date": "2026-05-18",
-	"compatibility_flags": ["global_fetch_strictly_public"],
-	"name": "docs",
-	"main": "@astrojs/cloudflare/entrypoints/server",
-	"assets": {
-		"directory": "./dist",
-		"binding": "ASSETS"
-	},
-	"observability": {
-		"enabled": true
-	}
+  "name": "carbon",
+  "compatibility_date": "2026-05-18",
+  "assets": {
+    "directory": "./dist",
+  }
 }

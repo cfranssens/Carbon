@@ -6,8 +6,7 @@ add_library(Carbon INTERFACE)
 target_compile_features(Carbon INTERFACE cxx_std_11)
 
 set_target_properties(Carbon PROPERTIES CXX_STANDARD_REQUIRED ON CXX_EXTENSIONS OFF)
-target_include_directories(Carbon INTERFACE ${CMAKE_SOURCE_DIRECTORY}/include)
-
+target_include_directories(Carbon INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_compile_options(Carbon INTERFACE
   # $<$<CXX_COMPILER_ID:GNU,Clang>:-ffreestanding -fno-exceptions -fno-rtti>
   $<$<CXX_COMPILER_ID:MSVC>:/Zc:wchar_t>

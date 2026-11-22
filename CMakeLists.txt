@@ -16,6 +16,11 @@ add_executable(carbon-dev src/main.cpp)
 target_link_libraries(carbon-dev PRIVATE Carbon)
 target_compile_features(carbon-dev PRIVATE cxx_std_11)
 
+set_target_properties(carbon-dev PROPERTIES
+  CXX_STANDARD 11
+  CXX_STANDARD_REQUIRED ON
+  CXX_EXTENSIONS OFF)
+
 target_compile_options(carbon-dev PRIVATE
     $<$<CXX_COMPILER_ID:GNU,Clang>:-O3 -march=native -pipe -Wall -Wextra>    
     $<$<CXX_COMPILER_ID:MSVC>:/O2 /Oi /Gy /W4>

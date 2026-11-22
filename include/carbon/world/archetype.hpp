@@ -14,9 +14,9 @@ namespace world {
   template <typename... Ts>
   using Archetype = ArchetypeImpl<typename meta::sort_types<meta::type_list<Ts...>>::type>;
 
-  template<size_t N> inline std::atomic<size_t> worldArchetypeCounter {0};
+  template<typename World> inline std::atomic<size_t> worldArchetypeCounter {0};
   // Gets archetype index local to N
-  template <typename Arch, size_t N> size_t getLocalArchetypeIndex() {
-    static size_t index = world::worldArchetypeCounter<N>.fetch_add(1, std::memory_order_relaxed);
+  template <typename Arch, typename World> size_t getLocalArchetypeIndex() {
+    static size_t index = world::worldArchetypeCounter<World>.fetch_add(1, std::memory_order_relaxed);
     return index;
   }}

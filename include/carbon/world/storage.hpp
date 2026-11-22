@@ -3,20 +3,58 @@
 #include "carbon/world/archetype.hpp"
 #include <carbon/platform/allocator.hpp>
 
+#include <cstdint>
+#include <sys/mman.h>
+
 namespace world {
-  using PagedAllocator = platform::ArenaAllocator<32 * 1024>;
+  constexpr size_t BLOCK_SIZE = 32 * 1024; 
+  using PagedAllocator = platform::ArenaAllocator<BLOCK_SIZE>;
   
   // Storage object belonging to a single archetype 
-  class ArchetypeStorage {
+  template <typename World> class ArchetypeStorage {
     public:
-      ArchetypeStorage() = default;
-    
-      template <typename Arch> void createStorage() {
-        static size_t archetypeIndex = world::getLocalArchetypeIndex<Arch>();
-        std::cout << archetypeIndex << std::endl;
+      ArchetypeStorage() {
+        m_storages = reinterpret_cast<uint8_t*>(mmap(nullptr, BLOCK_SIZE, PROT_READ | PROT_WRITE, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0));
+      };
+
+      PagedAllocator* allocator(size_t index) {
+        size_t block = index >> ALLOCATOR_BLOCK_CAPACITY_SHIFT;
+        size_t shift = index & (ALLOCATOR_BLOCK_CAPACITY - 1);
+        
+        return *reinterpret_cast<PagedAllocator**>(m_storages + (block * BLOCK_SIZE) + (shift * sizeof(PagedAllocator*))); 
+      }
+
+      // Call statically 
+      template <typename Arch, size_t Thread> PagedAllocator* allocator() {
+        static size_t archetypeIndex = world::getLocalArchetypeIndex<Arch, World>();
+        size_t i = m_archCount++; 
+        
+        size_t block = archetypeIndex >> ALLOCATOR_BLOCK_CAPACITY_SHIFT;
+        size_t blockIndex = archetypeIndex & (ALLOCATOR_BLOCK_CAPACITY - 1);     
+
+        uint8_t* b = m_storages + (block * BLOCK_SIZE);
+        [[maybe_unused]] static PagedAllocator* allocator = new PagedAllocator;
+        *reinterpret_cast<PagedAllocator**>(b + (blockIndex * sizeof(PagedAllocator*))) = allocator; 
+        // ArchetypeIndex acts as accessor 
+
+        // Expand archetype storage, replace with POSIX compliant call
+        if (block >= m_blockCount) {
+          m_storages = reinterpret_cast<uint8_t*>(mremap(m_storages, m_blockCount * BLOCK_SIZE, (m_blockCount + 1) * BLOCK_SIZE, MREMAP_MAYMOVE));
+          m_blockCount++;
+        }
+
+        return allocator;
       }
 
     private: 
-      PagedAllocator m_storages;
+      uint8_t* m_storages = nullptr;
+      size_t m_blockCount = 1;
+      size_t m_archCount = 0; 
+
+      // sizeof(PagedAllocator)* == 8) 
+     // ALLOCATOR_BLOCK_CAPACITY = POT when BLOCK_SIZE = POT
+      constexpr static size_t ALLOCATOR_BLOCK_CAPACITY = BLOCK_SIZE / sizeof(PagedAllocator*);
+      constexpr static size_t ALLOCATOR_BLOCK_CAPACITY_SHIFT = platform::log2_constexpr(ALLOCATOR_BLOCK_CAPACITY);
+      static_assert(ALLOCATOR_BLOCK_CAPACITY_SHIFT > 6, "BLOCK_SIZE should be larger than one (1) PagedAllocator (64b)!");
   };
 }

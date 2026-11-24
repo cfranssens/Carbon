@@ -4,10 +4,12 @@
 #include <carbon/platform/allocator.hpp>
 
 #include <cstdint>
+#include <mutex>
 #include <sys/mman.h>
 
 namespace world {
   constexpr size_t BLOCK_SIZE = 32 * 1024; 
+  constexpr size_t THREAD_COUNT = 8;
   using PagedAllocator = platform::ArenaAllocator<BLOCK_SIZE>;
   
   // Storage object belonging to a single archetype 
@@ -26,24 +28,25 @@ namespace world {
 
       // Call statically 
       template <typename Arch, size_t Thread> PagedAllocator* allocator() {
-        static size_t archetypeIndex = world::getLocalArchetypeIndex<Arch, World>();
-        size_t i = m_archCount++; 
-        
-        size_t block = archetypeIndex >> ALLOCATOR_BLOCK_CAPACITY_SHIFT;
-        size_t blockIndex = archetypeIndex & (ALLOCATOR_BLOCK_CAPACITY - 1);     
+        static_assert(Thread < THREAD_COUNT, "Thread index exceeds THREAD_COUNT");
+        static size_t archetypeIndex = world::getLocalArchetypeIndex<Arch, World>() * THREAD_COUNT + Thread;
 
-        uint8_t* b = m_storages + (block * BLOCK_SIZE);
-        [[maybe_unused]] static PagedAllocator* allocator = new PagedAllocator;
-        *reinterpret_cast<PagedAllocator**>(b + (blockIndex * sizeof(PagedAllocator*))) = allocator; 
-        // ArchetypeIndex acts as accessor 
+        typedef typename std::aligned_storage<sizeof(PagedAllocator), alignof(PagedAllocator)>::type Storage;
+        static Storage storage;                                            // static storage honors alignas(64)
+        static PagedAllocator* alloc = new (static_cast<void*>(&storage)) PagedAllocator;   // needs <new>
 
-        // Expand archetype storage, replace with POSIX compliant call
+        const size_t block      = archetypeIndex >> ALLOCATOR_BLOCK_CAPACITY_SHIFT;
+        const size_t blockIndex = archetypeIndex & (ALLOCATOR_BLOCK_CAPACITY - 1);
+
+        ++m_archCount;
         if (block >= m_blockCount) {
-          m_storages = reinterpret_cast<uint8_t*>(mremap(m_storages, m_blockCount * BLOCK_SIZE, (m_blockCount + 1) * BLOCK_SIZE, MREMAP_MAYMOVE));
-          m_blockCount++;
+        void* p = mremap(m_storages, m_blockCount * BLOCK_SIZE, (block + 1) * BLOCK_SIZE, MREMAP_MAYMOVE);
+          if (p == MAP_FAILED) std::abort();
+          m_storages = static_cast<uint8_t*>(p);
+          m_blockCount = block + 1;
         }
-
-        return allocator;
+        reinterpret_cast<PagedAllocator**>(m_storages + block * BLOCK_SIZE)[blockIndex] = alloc;
+        return alloc;
       }
 
     private: 

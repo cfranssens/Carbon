@@ -4,6 +4,7 @@
 #include "carbon/world/archetype.hpp"
 #include "carbon/world/entity.hpp"
 #include "carbon/world/storage.hpp"
+#include <algorithm>
 #include <cstddef>
 #include <array>
 #include <iostream>
@@ -22,47 +23,94 @@ namespace api {
     protected: 
       template<size_t Thread, typename... Ts> world::Entity createEntity(Ts&&... components) {
         using Arch = world::Archetype<Ts...>;
-        static size_t archetypeIndex = world::getLocalArchetypeIndex<Arch, World>();
+        //static size_t archetypeIndex = world::getLocalArchetypeIndex<Arch, World>();
 
         constexpr size_t BLOCK_CAPACITY =
           ((world::BLOCK_SIZE - (Arch::length + 1) * platform::WORD_LENGTH) << 3) / ((meta::size_sum<typename std::decay<Ts>::type...>::value << 3) + 2);
 
-        // Stable pointer
-        static world::PagedAllocator* allocator = m_storage->template allocator<Arch, Thread>();
         // Fills up current block before recycling to ease tlb pressure
         // Thread template ensures each thread receives a unique block
-        static platform::PageBlock* currentBlock = allocator->allocate();
-
+        // Reduce static loads 
+        static Cache<Thread, Arch> c = [this]{
+          Cache<Thread, Arch> c;
+          c.m_archetype  = world::getLocalArchetypeIndex<Arch, World>();
+          c.m_allocator  = m_storage->template allocator<Arch, Thread>();
+          c.m_allocator->m_capacity = BLOCK_CAPACITY;
+          c.m_block      = c.m_allocator->allocate();
+          c.m_blockIndex = c.m_allocator->m_currentBlock;
+          return c;
+        }();
+        
         using Offsets = meta::canonical_offsets<BLOCK_CAPACITY, platform::WORD_LENGTH, typename Arch::canonical>;
         
         for (;;) {
-          for (; currentBlock->m_waterline < (BLOCK_CAPACITY >> platform::WORD_SHIFT); currentBlock->m_waterline++) {
-            size_t& word = reinterpret_cast<size_t*>(currentBlock->data())[currentBlock->m_waterline];
+          for (; c.m_block->m_waterline < (BLOCK_CAPACITY >> platform::WORD_SHIFT); c.m_block->m_waterline++) {
+            size_t& word = reinterpret_cast<size_t*>(c.m_block->data())[c.m_block->m_waterline];
             if (~word == 0) continue;
 
             size_t shift = __builtin_ctzll(~word);
             word |= size_t(1) << shift;
 
-            size_t index = (currentBlock->m_waterline << platform::WORD_SHIFT) | shift;
-            unsigned char* base = reinterpret_cast<unsigned char*>(currentBlock->data());
+            size_t index = (c.m_block->m_waterline << platform::WORD_SHIFT) | shift;
+            unsigned char* base = reinterpret_cast<unsigned char*>(c.m_block->data());
             int expand[] = { 0, (storeComponent<Offsets, typename Arch::canonical>(base, index, std::forward<Ts>(components)), 0)... }; 
             (void)expand;
 
+            c.m_block->m_count++;
+
             world::Entity entity;
-            entity.archetype = archetypeIndex;
-            entity.block = allocator->m_currentBlock;
+            entity.thread = Thread;
+            entity.archetype = c.m_archetype;
+            entity.block = c.m_blockIndex;
             entity.index = index;
+
             return entity;
           }
-   
-          // TODO! Find first block with empty space that matches the thread, or is unclaimed.
-          currentBlock = allocator->allocate();
 
-          // static size_t localArchetypeIndex = world::getLocalArchetypeIndex<Arch, World>();
+          refill(*c.m_allocator, c.m_block, c.m_blockIndex); 
+        }
+        // static size_t localArchetypeIndex = world::getLocalArchetypeIndex<Arch, World>();
+      }
+
+      void removeEntity(world::Entity entity) { 
+        world::PagedAllocator* allocator = m_storage->allocator(entity.archetype * world::THREAD_COUNT + entity.thread);
+        platform::PageBlock* pb = allocator->at(entity.block);
+        
+        size_t word = entity.index >> platform::WORD_SHIFT;
+        size_t shift = entity.index & (platform::WORD_LENGTH - 1);
+
+        reinterpret_cast<size_t*>(pb->data())[word] &= ~(size_t(1) << shift);
+        
+        pb->m_waterline = std::min(word, pb->m_waterline); 
+        
+        if (pb->m_count-- < (allocator->m_capacity / 4) * 3 && entity.block < allocator->m_cursor) {
+          allocator->m_cursor = entity.block;
         }
       }
 
     private: 
+      template<size_t Thread, typename Arch> struct Cache {
+        world::PagedAllocator* m_allocator;
+        platform::PageBlock*   m_block;
+        size_t m_blockIndex;  
+        size_t m_archetype;
+      };
+
+      void refill(world::PagedAllocator& allocator, platform::PageBlock*& block, size_t& blockIndex) __attribute__((noinline, cold)) {
+        while (++allocator.m_cursor <= allocator.m_currentBlock) {
+          platform::PageBlock* pb = allocator.at(allocator.m_cursor);
+          if (pb->m_count >= (allocator.m_capacity / 4) * 3) continue; // Skip if block is more than 75% filled
+
+          block = allocator.at(allocator.m_cursor);
+          blockIndex = allocator.m_cursor;
+          return;
+        } 
+          
+        block = allocator.allocate();
+        allocator.m_cursor = allocator.m_currentBlock;
+        blockIndex = allocator.m_cursor;
+      }
+
       template <typename Offsets, typename Canon, typename T>
         static void storeComponent(unsigned char* base, size_t index, T&& value) {
           using D = typename std::decay<T>::type;

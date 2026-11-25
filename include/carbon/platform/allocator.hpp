@@ -1,3 +1,5 @@
+#pragma once
+
 #include "carbon/platform/pageblock.hpp"
 #include <cmath>
 #include <cstddef>
@@ -10,7 +12,6 @@
 namespace platform {
   constexpr size_t WORD_LENGTH = sizeof(size_t) << 3;
   constexpr size_t WORD_SHIFT = __builtin_ctzll(WORD_LENGTH);
-
   constexpr size_t align_up(size_t val, size_t alignment) {
     return (val + alignment - 1) & ~(alignment - 1);
   }

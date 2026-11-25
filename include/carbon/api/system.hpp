@@ -90,12 +90,16 @@ namespace api {
       // Queries belong to a system 
       template <typename... Ts, typename F> void query(F&& f) {
         using Query = filter::Query<Ts...>;
+        static world::QuerySig<Query, World> qSig = world::QuerySig<Query, World>::get();
+        qSig.debug();
+        //static world::Signature sig = [];
       } 
 
     private: 
       template<size_t Thread, typename Arch> struct Cache {
         world::PagedAllocator* m_allocator;
         platform::PageBlock*   m_block;
+        
         size_t m_blockIndex;  
         size_t m_archetype;
       };

@@ -17,11 +17,11 @@ find_package(EnTT CONFIG REQUIRED)
 find_package(flecs CONFIG REQUIRED)
 find_package(Threads REQUIRED)
 
-target_link_libraries(carbon-dev PRIVATE Carbon EnTT::EnTT flecs::flecs Threads::Threads)
-target_compile_features(carbon-dev PRIVATE cxx_std_17)
+target_link_libraries(carbon-dev PRIVATE Carbon) # EnTT::EnTT flecs::flecs Threads::Threads)
+target_compile_features(carbon-dev PRIVATE cxx_std_11)
  
 set_target_properties(carbon-dev PROPERTIES
-  CXX_STANDARD 17
+  CXX_STANDARD 11
   CXX_STANDARD_REQUIRED ON
   CXX_EXTENSIONS OFF)
  

@@ -70,7 +70,7 @@ namespace platform {
       }
 
       PageBlock* at(size_t flat) const {
-        size_t metaIdx = flat << TRACKED_REGIONS_PER_META_BLOCK;
+        size_t metaIdx = flat / TRACKED_REGIONS_PER_META_BLOCK;
         size_t inMeta  = flat % TRACKED_REGIONS_PER_META_BLOCK;
         size_t word    = inMeta >> WORD_SHIFT;
         size_t bit     = inMeta & ((size_t(1) << WORD_SHIFT) - 1);

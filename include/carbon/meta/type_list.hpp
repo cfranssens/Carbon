@@ -81,11 +81,13 @@ namespace meta {
   template <typename... Ds, typename... Cs>
   constexpr std::array<size_t, sizeof...(Cs)> permutation<type_list<Ds...>, type_list<Cs...>>::value;
 
-  template <typename... Ts> struct size_sum;
-  template <> struct size_sum<> { static constexpr size_t value = 0; };
-  template <typename T, typename... Ts> struct size_sum<T, Ts...> {
-    static constexpr size_t value = sizeof(T) + size_sum<Ts...>::value;
-  };
+  template <typename T>
+  struct stored_size : std::integral_constant<size_t, std::is_empty<T>::value ? 0 : sizeof(T)> {};
+
+  template <typename...>
+  struct size_sum : std::integral_constant<size_t, 0> {};
+  template <typename T, typename... Rest>
+  struct size_sum<T, Rest...> : std::integral_constant<size_t, stored_size<T>::value + size_sum<Rest...>::value> {};
 
   constexpr size_t align_up(size_t n, size_t a) { return (n + a - 1) / a * a; }
 

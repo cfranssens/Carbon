@@ -8,7 +8,7 @@
 #include <cstddef>
 #include <array>
 #include <iostream>
-
+#include <carbon/meta/filter.hpp>
 
 namespace api {
   template <typename World> class Core;
@@ -25,8 +25,7 @@ namespace api {
         using Arch = world::Archetype<Ts...>;
         //static size_t archetypeIndex = world::getLocalArchetypeIndex<Arch, World>();
 
-        constexpr size_t BLOCK_CAPACITY =
-          ((world::BLOCK_SIZE - (Arch::length + 1) * platform::WORD_LENGTH) << 3) / ((meta::size_sum<typename std::decay<Ts>::type...>::value << 3) + 2);
+        constexpr size_t BLOCK_CAPACITY = ((world::BLOCK_SIZE - (Arch::length + 1) * platform::WORD_LENGTH) << 3) / ((meta::size_sum<typename std::decay<Ts>::type...>::value << 3) + 2);
 
         // Fills up current block before recycling to ease tlb pressure
         // Thread template ensures each thread receives a unique block
@@ -53,7 +52,7 @@ namespace api {
 
             size_t index = (c.m_block->m_waterline << platform::WORD_SHIFT) | shift;
             unsigned char* base = reinterpret_cast<unsigned char*>(c.m_block->data());
-            int expand[] = { 0, (storeComponent<Offsets, typename Arch::canonical>(base, index, std::forward<Ts>(components)), 0)... }; 
+            int expand[] = { 0, (storeIfData<Offsets, typename Arch::canonical>(base, index, std::forward<Ts>(components), std::is_empty<typename std::decay<Ts>::type>()), 0)... };            
             (void)expand;
 
             c.m_block->m_count++;
@@ -88,6 +87,11 @@ namespace api {
         }
       }
 
+      // Queries belong to a system 
+      template <typename... Ts, typename F> void query(F&& f) {
+        using Query = filter::Query<Ts...>;
+      } 
+
     private: 
       template<size_t Thread, typename Arch> struct Cache {
         world::PagedAllocator* m_allocator;
@@ -109,6 +113,12 @@ namespace api {
         block = allocator.allocate();
         allocator.m_cursor = allocator.m_currentBlock;
         blockIndex = allocator.m_cursor;
+      }
+
+      template <typename Offsets, typename Canon, typename T> inline void storeIfData(unsigned char*, size_t, T&&, std::true_type /*empty*/) {}
+
+      template <typename Offsets, typename Canon, typename T> inline void storeIfData(unsigned char* base, size_t i, T&& v, std::false_type) {
+        storeComponent<Offsets, Canon>(base, i, std::forward<T>(v));
       }
 
       template <typename Offsets, typename Canon, typename T>

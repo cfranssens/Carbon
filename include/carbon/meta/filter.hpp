@@ -1,3 +1,4 @@
+#pragma once
 // Filter for querying 
 #include <type_traits>
 #include <carbon/meta/type_list.hpp>
@@ -48,4 +49,6 @@ namespace filter {
   struct Parse<meta::type_list<Qs...>, Withs, meta::type_list<WOs...>, Without<Added...>, Rest...>{
     using type = typename Parse<meta::type_list<Qs...>, Withs, meta::type_list<WOs..., Added...>, Rest...>::type;
   };
+  template <typename... Ts>
+  using Query = typename Parse<meta::type_list<>, meta::type_list<>, meta::type_list<>, Ts...>::type;
 }

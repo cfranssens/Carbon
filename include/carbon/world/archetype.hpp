@@ -8,6 +8,11 @@
 #include <cstddef>
 
 namespace world {
+  constexpr size_t ceil_div(size_t a, size_t b) { return (a + b - 1) / b; }
+
+  #define MAX_TYPES 128
+  static constexpr size_t WORDS = ceil_div(MAX_TYPES, platform::WORD_LENGTH);
+
   template <typename L> struct ArchetypeImpl;
   template <typename... Ts> struct ArchetypeImpl<meta::type_list<Ts...>>{
     using canonical = meta::type_list<Ts...>;
@@ -35,10 +40,6 @@ namespace world {
   constexpr size_t max3(size_t a, size_t b, size_t c) {
     return a > b ? (a > c ? a : c) : (b > c ? b : c);
   }
-  constexpr size_t ceil_div(size_t a, size_t b) { return (a + b - 1) / b; }
-  
-  #define MAX_TYPES 128
-
   template <size_t WORDS, typename World> struct SetBits {
     size_t (&words)[WORDS];
 
@@ -51,8 +52,6 @@ namespace world {
   };
 
   template <typename Query, typename World> struct QuerySig {
-    static constexpr size_t WORDS = ceil_div(MAX_TYPES, platform::WORD_LENGTH);
-
     size_t m_queries[WORDS];
     size_t m_withs[WORDS];
     size_t m_withouts[WORDS];
